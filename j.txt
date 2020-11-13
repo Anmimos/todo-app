@@ -1,0 +1,427 @@
+window.addEventListener('DOMContentLoaded', () => {
+
+    const uuid = () => ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+
+    const animClassName = "animated-hov";
+    const hovElems = document.querySelectorAll(".hover-wave");
+    const hovElemsSpan = [];
+
+    hovElems.forEach((element, index) => {
+        let addAnimation = false;
+
+        // if (element.classList[1] == "FLASH") {
+        //     element.addEventListener("animationend", e => {
+        //         element.classList.remove(animClassName);
+        //     });
+        //     addAnimation = true;
+        // }
+
+        if (!hovElemsSpan[index]){
+            hovElemsSpan[index] = element.querySelector("span");
+        }
+        element.addEventListener("mouseover", e => {
+            hovElemsSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+            hovElemsSpan[index].style.top = e.pageY - element.offsetTop + "px";
+
+            if (addAnimation) {element.classList.add(animClassName)}
+        });
+
+        element.addEventListener("mouseout", e => {
+            hovElemsSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+            hovElemsSpan[index].style.top = e.pageY - element.offsetTop + "px";
+        });
+    });
+
+    const form = document.querySelector('form'),
+        inputVal = document.querySelector('input[name="taskName"]');
+
+    inputVal.addEventListener('input', (e) => {
+        inputVal.value = inputVal.value.replace(/\  /g, '');
+    });
+
+    // localStorage.getItem('tasks') ? idArr = [] : null;
+    // console.log(JSON.parse(localStorage.getItem('tasks'))[0])
+
+    let ind = 0;
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const taskText = form.querySelector('input').value;
+
+        if (taskText == '' || taskText == ' ') {
+            return;
+        } else {
+            const taskId = uuid();
+
+            if (localStorage.getItem('_tasks')) {
+                const todos = localStorage.getItem('_tasks');
+                localStorage.setItem('_tasks', `${todos}${taskId} `);
+            } else {
+                localStorage.setItem('_tasks', `${taskId} `);
+            }
+            
+            localStorage.setItem(`task-${taskId}`, JSON.stringify({
+                taskText,
+                taskId,
+                completed: false
+            }));
+            
+            form.reset();
+
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card', 'animate__animated', 'animate__fadeInDown');
+
+
+            taskCard.innerHTML = `
+                <div class="check">
+                    <label class="labCheck" for="completed${ind}">
+                        <span></span>
+                        <text>
+                            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0)">
+                                <path d="M29.6631 3.95914C29.2027 3.48242 28.4431 3.46921 27.9664 3.92961C27.9564 3.93925 27.9465 3.94909 27.9368 3.95914L8.38525 23.5108L2.03365 17.1592C1.55693 16.6988 0.797273 16.712 0.336867 17.1887C-0.112289 17.6538 -0.112289 18.391 0.336867 18.856L7.53686 26.056C8.00549 26.5245 8.76508 26.5245 9.23364 26.056L29.6336 5.65599C30.1103 5.19552 30.1235 4.43586 29.6631 3.95914Z" fill="#000"/>
+                                </g>
+                                <defs>
+                                <clipPath id="clip0">
+                                <rect width="30" height="30" fill="white"/>
+                                </clipPath>
+                                </defs>
+                            </svg>
+                        </text>
+                    </label>
+                    <input type="checkbox" data-id=${taskId} id="completed${ind}" name="completed${ind}">
+                </div>
+                <div class="task-text">
+                    <p>${taskText}</p>
+                </div>
+                <a href=${taskId} class="hover-wave">
+                    <span></span> 
+                    <text>
+                        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.38599 10.7227V30H24.6141V10.7227H5.38599ZM11.6602 25.5469H9.90239V14.7656H11.6602V25.5469ZM15.879 25.5469H14.1211V14.7656H15.879V25.5469ZM20.0977 25.5469H18.3399V14.7656H20.0977V25.5469Z" fill="black"/>
+                            <path d="M19.2381 3.39844V0H10.7619V3.39844H4.20117V8.96484H25.7988V3.39844H19.2381ZM17.4803 3.39844H12.5197V1.75781H17.4803V3.39844Z" fill="black"/>
+                            </svg>                                                             
+                    </text>
+                </a>
+        `;
+            document.querySelector('div.tasks').append(taskCard);
+
+            const inputs = document.querySelector(`input[data-id="${taskId}"]`);
+
+            inputs.addEventListener('change', (e) => {
+                // e.preventDefault();
+                const inpId = e.target.getAttribute('data-id');
+                const taskTEXT = JSON.parse(localStorage.getItem(`task-${inpId}`));
+                if (inputs.checked) {
+                    localStorage.setItem(`task-${inpId}`, JSON.stringify({
+                        taskText: taskTEXT.taskText,
+                        taskId: inpId,
+                        completed: true
+                    }));
+                    const taskInp = JSON.parse(localStorage.getItem(`task-${inpId}`));
+                    // taskInp.completed
+                    e.target.previousElementSibling.querySelector('text').classList.add('checkVisible');
+                    e.target.parentNode.parentNode.querySelector('.task-text').classList.add('task-compl');
+                } else {
+                    localStorage.setItem(`task-${inpId}`, JSON.stringify({
+                        taskText: taskTEXT.taskText,
+                        taskId: inpId,
+                        completed: false
+                    }));
+                    e.target.previousElementSibling.querySelector('text').classList.remove('checkVisible');
+                    e.target.parentNode.parentNode.querySelector('.task-text').classList.remove('task-compl');
+                }
+            });
+            
+            const deleteBtn = document.querySelector(`a[href="${taskId}"]`);
+            
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (e.target.matches('a')) {
+                    const taskBtnId = e.target.getAttribute('href');
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    e.target.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                    e.target.parentNode.remove();
+                    },1000);
+
+                } else if (e.target.matches('span')) {
+                    const taskBtnId = e.target.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.remove();
+                    },1000);
+                } else if (e.target.matches('text')) {
+                    const taskBtnId = e.target.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.remove();
+                        },1000);
+                } else if (e.target.matches('path')) {
+                    const taskBtnId = e.target.parentNode.parentNode.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+                    e.target.parentNode.parentNode.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.parentNode.parentNode.remove();
+                        },1000);
+                } else if (e.target.matches('svg')) {
+                    const taskBtnId = e.target.parentNode.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.parentNode.remove();
+                        },1000);
+                }
+                // console.log(taskBtnId)
+            });
+
+            const hovElemsCard = taskCard.querySelectorAll(".hover-wave");
+            const hovElemsCardSpan = [];
+        
+            hovElemsCard.forEach((element, index) => {
+                let addAnimation = false;
+        
+                // if (element.classList[1] == "FLASH") {
+                //     element.addEventListener("animationend", e => {
+                //         element.classList.remove(animClassName);
+                //     });
+                //     addAnimation = true;
+                // }
+        
+                if (!hovElemsCardSpan[index]){
+                    hovElemsCardSpan[index] = element.querySelector("span");
+                }
+                element.addEventListener("mouseover", e => {
+                    hovElemsCardSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+                    hovElemsCardSpan[index].style.top = e.pageY - element.offsetTop + "px";
+        
+                    if (addAnimation) {element.classList.add(animClassName)}
+                });
+        
+                element.addEventListener("mouseout", e => {
+                    hovElemsCardSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+                    hovElemsCardSpan[index].style.top = e.pageY - element.offsetTop + "px";
+                });
+            });
+            
+
+            ind++;
+        }
+    });
+
+    function createTasks() {
+
+        const taskList = localStorage.getItem(`_tasks`).split(' ');
+
+    
+        for (let i = 0; i < taskList.length - 1; i++) {
+    
+            const task = JSON.parse(localStorage.getItem(`task-${taskList[i]}`));
+            
+            const taskCard = document.createElement('div');
+            taskCard.classList.add('task-card', 'animate__animated', 'animate__fadeInDown');
+    
+            const taskID = task.taskId,
+                  checkTask = task.completed;
+            
+            let classText = "task-text";
+            if (checkTask) {
+                classText += " task-compl";
+            }
+
+            let checkVis = '';
+            if (checkTask) {
+                checkVis = 'checkVisible';
+            } else {
+                checkVis = '';
+            }
+
+            taskCard.innerHTML = `
+                <div class="check">
+                    <label class="labCheck" for="completed${ind}">
+                        <span></span>
+                        <text class="${checkVis}">
+                            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0)">
+                                <path d="M29.6631 3.95914C29.2027 3.48242 28.4431 3.46921 27.9664 3.92961C27.9564 3.93925 27.9465 3.94909 27.9368 3.95914L8.38525 23.5108L2.03365 17.1592C1.55693 16.6988 0.797273 16.712 0.336867 17.1887C-0.112289 17.6538 -0.112289 18.391 0.336867 18.856L7.53686 26.056C8.00549 26.5245 8.76508 26.5245 9.23364 26.056L29.6336 5.65599C30.1103 5.19552 30.1235 4.43586 29.6631 3.95914Z" fill="#000"/>
+                                </g>
+                                <defs>
+                                <clipPath id="clip0">
+                                <rect width="30" height="30" fill="white"/>
+                                </clipPath>
+                                </defs>
+                            </svg>
+                        </text>
+                    </label>
+                    <input type="checkbox" data-id=${taskID} id="completed${ind}" name="completed${ind}">
+                </div>
+                <div class="${classText}">
+                    <p>${task.taskText}</p>
+                </div>
+                <a href=${taskID} class="hover-wave">
+                    <span></span> 
+                    <text>
+                        <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5.38599 10.7227V30H24.6141V10.7227H5.38599ZM11.6602 25.5469H9.90239V14.7656H11.6602V25.5469ZM15.879 25.5469H14.1211V14.7656H15.879V25.5469ZM20.0977 25.5469H18.3399V14.7656H20.0977V25.5469Z" fill="black"/>
+                            <path d="M19.2381 3.39844V0H10.7619V3.39844H4.20117V8.96484H25.7988V3.39844H19.2381ZM17.4803 3.39844H12.5197V1.75781H17.4803V3.39844Z" fill="black"/>
+                            </svg>                                                             
+                    </text>
+                </a>
+        `;
+            document.querySelector('div.tasks').append(taskCard);
+    
+            // if ()
+    
+            const hovElemsCard = taskCard.querySelectorAll(".hover-wave");
+            const hovElemsCardSpan = [];
+        
+            hovElemsCard.forEach((element, index) => {
+                let addAnimation = false;
+        
+                // if (element.classList[1] == "FLASH") {
+                //     element.addEventListener("animationend", e => {
+                //         element.classList.remove(animClassName);
+                //     });
+                //     addAnimation = true;
+                // }
+        
+                if (!hovElemsCardSpan[index]){
+                    hovElemsCardSpan[index] = element.querySelector("span");
+                }
+                element.addEventListener("mouseover", e => {
+                    hovElemsCardSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+                    hovElemsCardSpan[index].style.top = e.pageY - element.offsetTop + "px";
+        
+                    if (addAnimation) {element.classList.add(animClassName)}
+                });
+        
+                element.addEventListener("mouseout", e => {
+                    hovElemsCardSpan[index].style.left = e.pageX - element.offsetLeft + "px";
+                    hovElemsCardSpan[index].style.top = e.pageY - element.offsetTop + "px";
+                });
+            });
+            
+            const inputs = document.querySelector(`input[id="completed${ind}"]`);
+
+            inputs.addEventListener('change', (e) => {
+                e.preventDefault();
+                const inpId = e.target.getAttribute('data-id');
+                if (inputs.checked) {
+                    localStorage.setItem(`task-${inpId}`, JSON.stringify({
+                        taskText: task.taskText,
+                        taskId: inpId,
+                        completed: true
+                    }));
+                    const taskInp = JSON.parse(localStorage.getItem(`task-${inpId}`));
+                    // taskInp.completed
+                    e.target.previousElementSibling.querySelector('text').classList.add('checkVisible');
+                    e.target.parentNode.parentNode.querySelector('.task-text').classList.add('task-compl');
+                } else {
+                    localStorage.setItem(`task-${inpId}`, JSON.stringify({
+                        taskText: task.taskText,
+                        taskId: inpId,
+                        completed: false
+                    }));
+                    e.target.previousElementSibling.querySelector('text').classList.remove('checkVisible');
+                    e.target.parentNode.parentNode.querySelector('.task-text').classList.remove('task-compl');
+                }
+            });
+
+            const deleteBtn = document.querySelector(`a[href="${taskID}"]`);
+            
+            deleteBtn.addEventListener('click', (e) => {
+                // console.log(e.target)
+                e.preventDefault();
+                if (e.target.matches('a')) {
+                    const taskBtnId = e.target.getAttribute('href');
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    e.target.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                    e.target.parentNode.remove();
+                    },1000);
+
+                } else if (e.target.matches('span')) {
+                    const taskBtnId = e.target.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.remove();
+                    },1000);
+                } else if (e.target.matches('text')) {
+                    const taskBtnId = e.target.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.remove();
+                        },1000);
+                } else if (e.target.matches('path')) {
+                    const taskBtnId = e.target.parentNode.parentNode.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+                    e.target.parentNode.parentNode.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.parentNode.parentNode.remove();
+                        },1000);
+                } else if (e.target.matches('svg')) {
+                    const taskBtnId = e.target.parentNode.parentNode.getAttribute('href');
+
+                    const allTasks = localStorage.getItem('_tasks');
+                    localStorage.setItem('_tasks', `${allTasks.replace(`${taskBtnId} `, '')}`);
+                    localStorage.removeItem(`task-${taskBtnId}`);
+
+                    e.target.parentNode.parentNode.parentNode.classList.remove('animate__fadeInDown');
+                    e.target.parentNode.parentNode.parentNode.classList.add('animate__fadeOutDown');
+                    setTimeout(() => {
+                        e.target.parentNode.parentNode.parentNode.remove();
+                        },1000);
+                }
+                // console.log(tas
+            });
+
+            ind++;
+        }   
+    }
+
+    createTasks();
+});
